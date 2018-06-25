@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+
+<style>
+    .state{
+        fill: none;
+        stroke: #a9a9a9;
+        stroke-width: 1;
+    }
+    .state:hover{
+        fill-opacity:0;
+    }
+    #tooltip {   
+        position: absolute;           
+        text-align: center;
+        padding: 20px;             
+        margin: 10px;
+        font: 12px sans-serif;        
+        background: lightsteelblue;   
+        border: 1px;      
+        border-radius: 2px;           
+        pointer-events: none;         
+    }
+    #tooltip h4{
+        margin:0;
+        font-size:14px;
+    }
+    #tooltip{
+        background:rgba(0,0,0,0.9);
+        border:1px solid grey;
+        border-radius:5px;
+        font-size:12px;
+        width:auto;
+        padding:4px;
+        color:white;
+        opacity:0;
+    }
+    #tooltip table{
+        table-layout:fixed;
+    }
+    #tooltip tr td{
+        padding:0;
+        margin:0;
+    }
+    #tooltip tr td:nth-child(1){
+        width:50px;
+    }
+    #tooltip tr td:nth-child(2){
+        text-align:center;
+    }
+</style>
+
+<body>
+    <div id="tooltip"></div><!-- div to hold tooltip. -->
+
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <script src="http://d3js.org/topojson.v1.min.js"></script>
+    <script src="https://rawgit.com/Anujarya300/bubble_maps/master/data/geography-data/datamaps.none.js"></script>
+    <svg width="960" height="600" id="chilesvg"></svg> <!-- svg to hold the map. -->
+    <!--<div id="chile" style="height: 600px; width: 900px;"></div>!-->
+    <script>
+
+        //obtener data de los csv
+        d3.csv("IVE-SINAE.csv", function(error, data_total) {            
+                
+                //trabajo en los datos para agruparlos por region
+                var nested_region = d3.nest()
+                .key(function(d){return +d.COD_REGION;})
+                .key(function(d){return +d.DEPENDENCIA})
+                .rollup(function(leaves) { return {
+                    "suma_prioridades" : d3.sum(leaves,function(v){ return v.SUMA_PRIORIDADES}),
+                    "suma_alumnos" : d3.sum(leaves,function(v){ return v.TOTAL_MATRICULA_2015}) 
+                }}) 
+                    
+                .entries(data_total);
+                //console.log("basica "+data_basica[0].PRIMERA_PRIORIDAD);
+                              
+                //var str = JSON.stringify(nestes_region[0], null, 2);
+                //console.log("Nested " + str);
+
+
+                
+
+                console.log("acceder dato: " + nestes_region[0].values[0].suma_prioridades)
+                
+                //data para probar
+                var sampleData = {
+                    'TA': {id: 'TA',  color : "cc4731", suma_prioridades: nested_region[0].values[0].suma_prioridades},
+                    'AN': { id: 'AN',  color: "cc4731", suma_prioridades: nested_region[1].values[0].suma_prioridades }, 
+                    'AT': {id: 'AT',  color : "cc4731", suma_prioridades: nested_region[0].values[0].suma_prioridades},
+                    'CO': {id: 'CO',  color : "cc4731", suma_prioridades: nested_region[0].values[0].suma_prioridades},
+                    'VS': {id: 'VS',  color : "cc4731", suma_prioridades: nested_region[0].values[0].suma_prioridades},
+                    'LI': {id: 'LI',  color : "cc4731", suma_prioridades: nested_region[0].values[0].suma_prioridades},
+                    'ML' : {id: 'ML', color: "gla", suma_prioridades: nested_region[9].values.suma_prioridades},
+                    'BI': {id: 'BI',  color : "cc4731", suma_prioridades: nested_region[0].values[0].suma_prioridades},
+                    'AR': {id: 'AR',  color : "cc4731", suma_prioridades: nested_region[0].values[0].suma_prioridades},
+                    'LL': {id: 'LL',  color : "cc4731", suma_prioridades: nested_region[0].values[0].suma_prioridades},
+                    'AI': {id: 'AI',  color : "cc4731", suma_prioridades: nested_region[0].values[0].suma_prioridades},
+                    'MA': { id: 'MA',  color: "cc4731",suma_prioridades: nested_region[2].values[0].suma_prioridades}, 
+                    'RM': {id: 'RM',  color : "cc4731", suma_prioridades: nested_region[0].values[0].suma_prioridades},  
+                    'LR': {id: 'LR',  color : "cc4731", suma_prioridades: nested_region[0].values[0].suma_prioridades}, 
+                    'AP': {id: 'AP',  color : "cc4731", suma_prioridades: nested_region[0].values[0].suma_prioridades}   
+                }
+
+                console.log(sampleData['AN'])
+
+                function addFillKey(mapData){
+                    for (var mapDatum in mapData){
+                        if(mapData[mapDatum].suma_prioridades){
+                            mapData[mapDatum].fillKey = color1;
+                        }   
+
+                        else if (mapDatum[mapDatum].suma_prioridades){
+                            mapData[mapDatum].fillKey = color2;
+                        }
+
+
+                        else if (mapDatum[mapDatum].suma_prioridades){
+                            mapData[mapDatum].fillKey = color3;
+                        }
+
+
+                        else if (mapDatum[mapDatum].suma_prioridades){
+                            mapData[mapDatum].fillKey = color4;
+                        }
+
+
+                        else {
+                            mapData[mapDatum].fillKey = color5;
+                        }
+
+                        mapData[mapDatum].fillKey = mapData[mapDatum].id;
+                        fillss[mapDatum] = color(mapData[mapDatum].suma_prioridades);                  
+                    }
+                   
+                }
+
+                addFillKey(sampleData);
+                //creacion del mapa
+                var chile_map = new Datamap(
+                {
+                    element: document.getElementById('chilesvg'),
+                    scope: 'chile',
+                    geographyConfig: {
+                        popupOnHover: true,
+                        highlightOnHover: true,
+                        borderColor: '#444',
+                        borderWidth: 0.5,
+                        dataUrl: 'http://localhost:8080/chile.topo.json'
+                        //dataJson: topoJsonData
+                    },
+
+                    fills: {
+                        'color1': '#FF0000' //rojo
+                        'color2':'#FF4500' //naranjo
+                        'color3': '#FF7300' //naranjo claro
+                        'color4': '#FFD000' //amarillo
+                        'color5': '#FFFF00' //amarillo patito
+
+                    },
+                    data: sampleData,
+                    setProjection: function (element) {
+                        var projection = d3.geo.mercator() //define que tipo de mapa usaremos
+                            .center([-71.5429688,-35.675148]) // always in [East Latitude, North Longitude]
+                            .scale(700);
+                        var path = d3.geo.path().projection(projection); 
+                        return { path: path, projection: projection };
+                    }
+                }); 
+
+
+                /* function to create html content string in tooltip div. */
+                function tooltipHtml(d){ 
+                    return "<h4>"+(d.COD_REGION)+"</h4><table>"+
+                            "<tr><td>Low</td><td>"+(d.SUMA_PRIORIDADES)+"</td></tr>"+
+                            "</table>";
+                }
+
+
+                var draw = function(id, data, toolTip){
+                    function mouseOver(d){
+                        console.log("pase por arriba " + d);
+                        d3.select("#tooltip").transition().duration(200).style("opacity", .9);      
+                                    
+                        d3.select("#tooltip").html(toolTip(data[d.id]))
+                        .style("left", (d3.event.pageX) + "px")     
+                        .style("top", (d3.event.pageY - 28) + "px");
+                    }
+                                
+                    function mouseOut(){
+                        console.log("saco el mouse");
+                        d3.select("#tooltip").transition().duration(500).style("opacity", 0);      
+                    }
+                                
+                    d3.select(id).selectAll(".state")
+                        //.data('sampleData').enter().append("path").attr("class","state").attr("d",function(d){console.log("metiendo states " + d.d); return d.d;})
+                        //.style("fill",function(d){ console.log("rellenando " + d); return data[d.color]; })
+                        .on("mouseover", mouseOver)
+                        .on("mouseout", mouseOut);
+                }
+
+                draw("#chilesvg", sampleData, tooltipHtml);
+                // // ISO ID code for city or <state></state>
+                //setTimeout(() => { // only start drawing bubbles on the map when map has rendered completely.
+                 //   chile_map.bubbles(bubbles, {
+                   //     popupTemplate: function (geo, data) {
+                     //       return `<div class="hoverinfo">city: ${data.state}, Slums: ${data.radius}%</div>`;
+                       // }
+                   // });
+               // }, 1000);
+
+            })
+    </script>
+</body>
+
+</html>
+
