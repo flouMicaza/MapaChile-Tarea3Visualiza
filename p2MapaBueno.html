@@ -3,53 +3,15 @@
 
 
 <style>
-    .state{
-        fill: none;
-        stroke: #a9a9a9;
-        stroke-width: 1;
-    }
-    .state:hover{
-        fill-opacity:0;
-    }
-    #tooltip {   
-        position: absolute;           
-        text-align: center;
-        padding: 20px;             
-        margin: 10px;
-        font: 12px sans-serif;        
-        background: lightsteelblue;   
-        border: 1px;      
-        border-radius: 2px;           
-        pointer-events: none;         
-    }
-    #tooltip h4{
-        margin:0;
-        font-size:14px;
-    }
-    #tooltip{
-        background:rgba(0,0,0,0.9);
-        border:1px solid grey;
-        border-radius:5px;
-        font-size:12px;
-        width:auto;
-        padding:4px;
-        color:white;
-        opacity:0;
-    }
-    #tooltip table{
-        table-layout:fixed;
-    }
-    #tooltip tr td{
-        padding:0;
-        margin:0;
-    }
-    #tooltip tr td:nth-child(1){
-        width:50px;
-    }
-    #tooltip tr td:nth-child(2){
-        text-align:center;
-    }
-</style>
+
+
+    .column {
+    float: left;
+    width: 50%;
+    padding: 10px;
+    
+}
+ </style>
 
 <body>
     <div id="tooltip"></div><!-- div to hold tooltip. -->
@@ -57,90 +19,167 @@
     <script src="http://d3js.org/d3.v3.min.js"></script>
     <script src="http://d3js.org/topojson.v1.min.js"></script>
     <script src="https://rawgit.com/Anujarya300/bubble_maps/master/data/geography-data/datamaps.none.js"></script>
-    <svg width="960" height="600" id="chilesvg"></svg> <!-- svg to hold the map. -->
-    <!--<div id="chile" style="height: 600px; width: 900px;"></div>!-->
+    <div class="row">
+        <div class="column">
+            <svg width="650" height="600"  id="chilesvgVul"></svg> <!-- svg to hold the map. -->
+           
+        </div>   
+        <div class="row">
+             <svg width="600" height="600" id="chilesvgNoVul"></svg> <!-- svg to hold the map. -->            
+        </div>    
+    </div>
     <script>
 
         //obtener data de los csv
         d3.csv("IVE-SINAE.csv", function(error, data_total) {            
-                
-                //trabajo en los datos para agruparlos por region
+
+                //trabajo en los datos para agruparlos por region y separo vulnerables y no vulnerables. 
                 var nested_region = d3.nest()
                 .key(function(d){return +d.COD_REGION;})
-                .key(function(d){return +d.DEPENDENCIA})
-                .rollup(function(leaves) { return {
-                    "suma_prioridades" : d3.sum(leaves,function(v){ return v.SUMA_PRIORIDADES}),
-                    "suma_alumnos" : d3.sum(leaves,function(v){ return v.TOTAL_MATRICULA_2015}) 
-                }}) 
-                    
+                .rollup(function(leaves){return {
+                    "NO_VULNERABLES": d3.sum(leaves,function(v){return v.NO_VULNERABLES}),
+                    "SUMA_PRIORIDADES": d3.sum(leaves,function(v){return v.SUMA_PRIORIDADES}),  
+                    "suma_alumnos" : d3.sum(leaves,function(v){return v.TOTAL_MATRICULA_2015})                  
+                }})
                 .entries(data_total);
-                //console.log("basica "+data_basica[0].PRIMERA_PRIORIDAD);
-                              
-                //var str = JSON.stringify(nestes_region[0], null, 2);
-                //console.log("Nested " + str);
 
 
-                
 
-                console.log("acceder dato: " + nestes_region[0].values[0].suma_prioridades)
-                
                 //data para probar
-                var sampleData = {
-                    'TA': {id: 'TA',  color : "cc4731", suma_prioridades: nested_region[0].values[0].suma_prioridades},
-                    'AN': { id: 'AN',  color: "cc4731", suma_prioridades: nested_region[1].values[0].suma_prioridades }, 
-                    'AT': {id: 'AT',  color : "cc4731", suma_prioridades: nested_region[0].values[0].suma_prioridades},
-                    'CO': {id: 'CO',  color : "cc4731", suma_prioridades: nested_region[0].values[0].suma_prioridades},
-                    'VS': {id: 'VS',  color : "cc4731", suma_prioridades: nested_region[0].values[0].suma_prioridades},
-                    'LI': {id: 'LI',  color : "cc4731", suma_prioridades: nested_region[0].values[0].suma_prioridades},
-                    'ML' : {id: 'ML', color: "gla", suma_prioridades: nested_region[9].values.suma_prioridades},
-                    'BI': {id: 'BI',  color : "cc4731", suma_prioridades: nested_region[0].values[0].suma_prioridades},
-                    'AR': {id: 'AR',  color : "cc4731", suma_prioridades: nested_region[0].values[0].suma_prioridades},
-                    'LL': {id: 'LL',  color : "cc4731", suma_prioridades: nested_region[0].values[0].suma_prioridades},
-                    'AI': {id: 'AI',  color : "cc4731", suma_prioridades: nested_region[0].values[0].suma_prioridades},
-                    'MA': { id: 'MA',  color: "cc4731",suma_prioridades: nested_region[2].values[0].suma_prioridades}, 
-                    'RM': {id: 'RM',  color : "cc4731", suma_prioridades: nested_region[0].values[0].suma_prioridades},  
-                    'LR': {id: 'LR',  color : "cc4731", suma_prioridades: nested_region[0].values[0].suma_prioridades}, 
-                    'AP': {id: 'AP',  color : "cc4731", suma_prioridades: nested_region[0].values[0].suma_prioridades}   
+                var sampleDataVul = {
+                    'TA': {id: 'TA',  color : "cc4731" },
+                    'AN': {id: 'AN',  color: "cc4731"}, 
+                    'AT': {id: 'AT',  color : "cc4731" },
+                    'CO': {id: 'CO',  color : "cc4731" },
+                    'VS': {id: 'VS',  color : "cc4731" },
+                    'LI': {id: 'LI',  color : "cc4731" },
+                    'ML': {id: 'ML',  color: "cc4731"},
+                    'BI': {id: 'BI',  color : "cc4731" },
+                    'AR': {id: 'AR',  color : "cc4731" },
+                    'LL': {id: 'LL',  color : "cc4731" },
+                    'AI': {id: 'AI',  color : "cc4731" },
+                    'MA': {id: 'MA',  color: "cc4731" }, 
+                    'RM': {id: 'RM',  color : "cc4731" },  
+                    'LR': {id: 'LR',  color : "cc4731" }, 
+                    'AP': {id: 'AP',  color : "cc4731" }   
                 }
 
-                console.log(sampleData['AN'])
+                var sampleDataNoVul = {
+                    'TA': {id: 'TA',  color : "cc4731" },
+                    'AN': {id: 'AN',  color: "cc4731"}, 
+                    'AT': {id: 'AT',  color : "cc4731" },
+                    'CO': {id: 'CO',  color : "cc4731" },
+                    'VS': {id: 'VS',  color : "cc4731" },
+                    'LI': {id: 'LI',  color : "cc4731" },
+                    'ML': {id: 'ML',  color: "cc4731"},
+                    'BI': {id: 'BI',  color : "cc4731" },
+                    'AR': {id: 'AR',  color : "cc4731" },
+                    'LL': {id: 'LL',  color : "cc4731" },
+                    'AI': {id: 'AI',  color : "cc4731" },
+                    'MA': {id: 'MA',  color: "cc4731" }, 
+                    'RM': {id: 'RM',  color : "cc4731" },  
+                    'LR': {id: 'LR',  color : "cc4731" }, 
+                    'AP': {id: 'AP',  color : "cc4731" }   
+                }
 
-                function addFillKey(mapData){
+
+                //agrego datos por region a la data si son vulnerables(1) o no vulnerables(2)
+                function addPorRegion(data,type){
+                    var i = 0;
+                    //vulnerable
+                    if(type==1){
+                        for(var region in data){
+                            data[region].SUMA_PRIORIDADES = nested_region[i].values.SUMA_PRIORIDADES;
+
+                            data[region].NO_VULNERABLES = nested_region[i].values.NO_VULNERABLES;
+                            data[region].suma_alumnos = nested_region[i].values.suma_alumnos;
+                            i++;
+                        }
+                    }
+                    else{
+                        for(var region in data){
+                            data[region].NO_VULNERABLES = nested_region[i].values.NO_VULNERABLES;
+                            data[region].suma_alumnos = nested_region[i].values.suma_alumnos;
+                            i++;
+                        }
+                    }                    
+                }
+                addPorRegion(sampleDataVul,1);
+                addPorRegion(sampleDataNoVul,2);
+
+
+                //funcion para setear el color segun si pintamos vulnerables(1) o no vulnerables(2)
+                function addFillKey(mapData,type){
                     for (var mapDatum in mapData){
-                        if(mapData[mapDatum].suma_prioridades){
-                            mapData[mapDatum].fillKey = color1;
+                        if(type==1){
+                            var porcentaje = mapData[mapDatum].SUMA_PRIORIDADES*100/mapData[mapDatum].suma_alumnos;
+                            var porcentaje2 = mapData[mapDatum].NO_VULNERABLES*100/mapData[mapDatum].suma_alumnos;
+                            console.log("porcentaje: ",porcentaje+porcentaje2);
+                        }
+                            
+                        else 
+                            var porcentaje = mapData[mapDatum].NO_VULNERABLES/mapData[mapDatum].suma_alumnos ;
+
+
+
+                        if(porcentaje <= 10){
+                            mapData[mapDatum].fillKey = "color1";
                         }   
 
-                        else if (mapDatum[mapDatum].suma_prioridades){
-                            mapData[mapDatum].fillKey = color2;
+                        else if (porcentaje>10 && porcentaje <=20){
+                            mapData[mapDatum].fillKey = "color2";
                         }
 
 
-                        else if (mapDatum[mapDatum].suma_prioridades){
-                            mapData[mapDatum].fillKey = color3;
+                        else if (porcentaje>20 && porcentaje <=30){
+                            mapData[mapDatum].fillKey = "color3";
                         }
 
 
-                        else if (mapDatum[mapDatum].suma_prioridades){
-                            mapData[mapDatum].fillKey = color4;
+                        else if (porcentaje > 30 && porcentaje <= 40){
+                            mapData[mapDatum].fillKey = "color4";
                         }
 
 
+                        else if (porcentaje > 40 && porcentaje <= 50){
+                            mapData[mapDatum].fillKey = "color5";
+                        }
+
+                        else if (porcentaje > 50 && porcentaje <= 60){
+                            mapData[mapDatum].fillKey = "color6";
+                        }
+
+
+                        else if (porcentaje > 60 && porcentaje <= 70){
+                            mapData[mapDatum].fillKey = "color7";
+                        }
+
+                        else if (porcentaje > 70 && porcentaje <= 80){
+                            mapData[mapDatum].fillKey = "color8";
+                        }
+
+                        else if (porcentaje > 80 && porcentaje <= 90){
+                            mapData[mapDatum].fillKey = "color9";
+                        }
                         else {
-                            mapData[mapDatum].fillKey = color5;
-                        }
-
-                        mapData[mapDatum].fillKey = mapData[mapDatum].id;
-                        fillss[mapDatum] = color(mapData[mapDatum].suma_prioridades);                  
+                            mapData[mapDatum].fillKey = "color10";
+                        }                        
                     }
                    
                 }
 
-                addFillKey(sampleData);
+                addFillKey(sampleDataVul,1);
+                addFillKey(sampleDataNoVul,2);
+
+
+
+
+
+
                 //creacion del mapa
                 var chile_map = new Datamap(
                 {
-                    element: document.getElementById('chilesvg'),
+                    element: document.getElementById('chilesvgVul'),
                     scope: 'chile',
                     geographyConfig: {
                         popupOnHover: true,
@@ -152,14 +191,59 @@
                     },
 
                     fills: {
-                        'color1': '#FF0000' //rojo
-                        'color2':'#FF4500' //naranjo
-                        'color3': '#FF7300' //naranjo claro
-                        'color4': '#FFD000' //amarillo
-                        'color5': '#FFFF00' //amarillo patito
+                        'color1': '#FF0000', //rojo
+                        'color2'  : '#FF2E00',
+
+                        'color3':'#FF4500', //naranjo
+                        'color4' : '#FF5C00',
+                        'color5': '#FF7300', 
+                        'color6' : '#FF8B00',
+                        'color7' : '#FFA200',
+                        'color8' : '#FFB900',
+                        'color9': '#FFD000', //amarillo
+                        'color10': '#FFFF00', //amarillo patito
 
                     },
-                    data: sampleData,
+                    data: sampleDataVul,
+                    setProjection: function (element) {
+                        var projection = d3.geo.mercator() //define que tipo de mapa usaremos
+                            .center([-71.5429688,-35.675148]) // always in [East Latitude, North Longitude]
+                            .scale(700);
+                        var path = d3.geo.path().projection(projection); 
+                        return { path: path, projection: projection };
+                    }
+                }); 
+                chile_map.legend({legendTitle: 'Map Legend!'});
+
+                //creacion del mapa
+                var chile_map2 = new Datamap(
+                {
+                    element: document.getElementById('chilesvgNoVul'),
+                    scope: 'chile',
+                    geographyConfig: {
+                        popupOnHover: true,
+                        highlightOnHover: true,
+                        borderColor: '#444',
+                        borderWidth: 0.5,
+                        dataUrl: 'http://localhost:8080/chile.topo.json'
+                        //dataJson: topoJsonData
+                    },
+
+                    fills: {
+                        'color1': '#FF0000', //rojo
+                        'color2'  : '#FF2E00',
+
+                        'color3':'#FF4500', //naranjo
+                        'color4' : '#FF5C00',
+                        'color5': '#FF7300', 
+                        'color6' : '#FF8B00',
+                        'color7' : '#FFA200',
+                        'color8' : '#FFB900',
+                        'color9': '#FFD000', //amarillo
+                        'color10': '#FFFF00', //amarillo patito
+
+                    },
+                    data: sampleDataNoVul,
                     setProjection: function (element) {
                         var projection = d3.geo.mercator() //define que tipo de mapa usaremos
                             .center([-71.5429688,-35.675148]) // always in [East Latitude, North Longitude]
@@ -169,46 +253,43 @@
                     }
                 }); 
 
+                chile_map2.legend({
+                    legendTitle : "holaaaaa"
+                });
 
-                /* function to create html content string in tooltip div. */
-                function tooltipHtml(d){ 
-                    return "<h4>"+(d.COD_REGION)+"</h4><table>"+
-                            "<tr><td>Low</td><td>"+(d.SUMA_PRIORIDADES)+"</td></tr>"+
-                            "</table>";
+
+            //trabajo en los datos para agruparlos por region y depe y saco cant de prioridades
+               /* var nested_region_depe = d3.nest()
+                .key(function(d){return +d.COD_REGION;})
+                .key(function(d){return +d.DEPENDENCIA;})
+                .rollup(function(leaves) { return {
+                    "SUMA_PRIORIDADES" : d3.sum(leaves,function(v){return v.SUMA_PRIORIDADES}),
+                    "NO_VULNERABLES" : d3.sum(leaves,function(v){return v.NO_VULNERABLES}),
+                    "suma_alumnos" : d3.sum(leaves,function(v){ return v.TOTAL_MATRICULA_2015}) 
+                }})                     
+                .entries(data_total);*/
+                   
+
+                //var str = JSON.stringify(nested_region[0], null, 2);
+                //console.log("Nested " + str);
+                
+
+                
+               /*function addPorDepe(data){
+                    var i = 0;
+                    for(var region in data){
+                        data[region].PRIMERA_PRIORIDAD=nested_region[i].values.PRIMERA_PRIORIDAD;
+                        data[region].SEGUNDA_PRIORIDAD=nested_region[i].values.SEGUNDA_PRIORIDAD;                        
+                        data[region].TERCERA_PRIORIDAD=nested_region[i].values.TERCERA_PRIORIDAD;
+                        data[region].SUMA_PRIORIDADES = nested_region[i].values.SUMA_PRIORIDADES;
+                        data[region].suma_alumnos = nested_region[i].values.suma_alumnos;
+                        i++;
+                    }   
                 }
 
+                addPorDepe(sampleData);*/
 
-                var draw = function(id, data, toolTip){
-                    function mouseOver(d){
-                        console.log("pase por arriba " + d);
-                        d3.select("#tooltip").transition().duration(200).style("opacity", .9);      
-                                    
-                        d3.select("#tooltip").html(toolTip(data[d.id]))
-                        .style("left", (d3.event.pageX) + "px")     
-                        .style("top", (d3.event.pageY - 28) + "px");
-                    }
-                                
-                    function mouseOut(){
-                        console.log("saco el mouse");
-                        d3.select("#tooltip").transition().duration(500).style("opacity", 0);      
-                    }
-                                
-                    d3.select(id).selectAll(".state")
-                        //.data('sampleData').enter().append("path").attr("class","state").attr("d",function(d){console.log("metiendo states " + d.d); return d.d;})
-                        //.style("fill",function(d){ console.log("rellenando " + d); return data[d.color]; })
-                        .on("mouseover", mouseOver)
-                        .on("mouseout", mouseOut);
-                }
-
-                draw("#chilesvg", sampleData, tooltipHtml);
-                // // ISO ID code for city or <state></state>
-                //setTimeout(() => { // only start drawing bubbles on the map when map has rendered completely.
-                 //   chile_map.bubbles(bubbles, {
-                   //     popupTemplate: function (geo, data) {
-                     //       return `<div class="hoverinfo">city: ${data.state}, Slums: ${data.radius}%</div>`;
-                       // }
-                   // });
-               // }, 1000);
+        
 
             })
     </script>
