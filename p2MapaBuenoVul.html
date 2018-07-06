@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<body>
+   
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <script src="http://d3js.org/topojson.v1.min.js"></script>
+    <script src="https://rawgit.com/Anujarya300/bubble_maps/master/data/geography-data/datamaps.none.js"></script>
+
+    <div style="height: 600px; width: 900px;" id="chilesvgVul"></div><!-- svg to hold the map. -->
+           
+        
+    <script>
+
+        //obtener data de los csv
+        d3.csv("IVE-SINAE.csv", function(error, data_total) {            
+
+                //trabajo en los datos para agruparlos por region y separo vulnerables y no vulnerables. 
+                var nested_region = d3.nest()
+                .key(function(d){return +d.COD_REGION;})
+                .rollup(function(leaves){return {
+                    "NO_VULNERABLES": d3.sum(leaves,function(v){return v.NO_VULNERABLES}),
+                    "SUMA_PRIORIDADES": d3.sum(leaves,function(v){return v.SUMA_PRIORIDADES}),  
+                    "suma_alumnos" : d3.sum(leaves,function(v){return v.TOTAL_MATRICULA_2015})                  
+                }})
+                .entries(data_total);
+
+
+
+                //data para probar
+                var sampleDataVul = {
+                    'TA': {id: 'TA'},
+                    'AN': {id: 'AN'}, 
+                    'AT': {id: 'AT'},
+                    'CO': {id: 'CO'},
+                    'VS': {id: 'VS'},
+                    'LI': {id: 'LI'},
+                    'ML': {id: 'ML'},
+                    'BI': {id: 'BI'},
+                    'AR': {id: 'AR'},
+                    'LL': {id: 'LL'},
+                    'AI': {id: 'AI'},
+                    'MA': {id: 'MA'}, 
+                    'RM': {id: 'RM'},  
+                    'LR': {id: 'LR'},
+                    'AP': {id: 'AP'}   
+                }
+
+            
+
+                //agrego datos por region a la data si son vulnerables(1) o no vulnerables(2)
+                function addPorRegion(data){
+                    var i = 0;
+                    //vulnerable
+ 
+                    for(var region in data){
+                            data[region].SUMA_PRIORIDADES = nested_region[i].values.SUMA_PRIORIDADES;
+
+                            data[region].NO_VULNERABLES = nested_region[i].values.NO_VULNERABLES;
+                            data[region].suma_alumnos = nested_region[i].values.suma_alumnos;
+                            i++;
+                        }
+                                       
+                }
+
+                addPorRegion(sampleDataVul);
+                
+
+                //funcion para setear el color segun si pintamos vulnerables(1) o no vulnerables(2)
+                function addFillKey(mapData,type){
+                    for (var mapDatum in mapData){
+                        if(type==1){
+                            
+                            var porcentaje = Math.round(mapData[mapDatum].SUMA_PRIORIDADES*100/mapData[mapDatum].suma_alumnos);
+                            console.log("Estoy seteando keys" + mapData[mapDatum].SUMA_PRIORIDADES);
+                        }
+                            
+                        else {
+                            var porcentaje = Math.round(mapData[mapDatum].NO_VULNERABLES*100/mapData[mapDatum].suma_alumnos) ;
+                        }
+
+                        if(porcentaje <= 18){
+                            mapData[mapDatum].fillKey = "<18%";
+                        }   
+
+                        else if (porcentaje>18 && porcentaje <=25){                           
+                            mapData[mapDatum].fillKey = "Entre 18% y 25%";
+                        }
+
+
+                        else if (porcentaje>25 && porcentaje <=32){                            
+                            mapData[mapDatum].fillKey = "Entre 25% y 32%";
+                        }
+
+
+                        else if (porcentaje > 32 && porcentaje <= 39){                            
+                            mapData[mapDatum].fillKey = "Entre 32% y 39%";
+                        }
+
+
+                        else if (porcentaje > 39 && porcentaje <= 46){                           
+                            mapData[mapDatum].fillKey = "Entre 39% y 46%";
+                        }
+
+                        else if (porcentaje > 46 && porcentaje <= 53){
+                            mapData[mapDatum].fillKey = "Entre 46% y 53%";
+                        }
+
+
+                        else if (porcentaje > 53 && porcentaje <= 60){
+                            mapData[mapDatum].fillKey = "Entre 53% y 60%";
+                        }
+
+                        else if (porcentaje > 60 && porcentaje <= 67){
+                            mapData[mapDatum].fillKey = "Entre 60% y 67%";
+                        }
+
+                        else if (porcentaje > 67 && porcentaje <= 74){
+                            mapData[mapDatum].fillKey = "Entre 67% y 74%";
+                        }
+                        
+                    }
+                   
+                }
+
+                addFillKey(sampleDataVul,1);
+                console.log(sampleDataVul['AN']);
+
+                //creacion del mapa
+                var chile_map = new Datamap(
+                {
+                    element: document.getElementById('chilesvgVul'),
+                    scope: 'chile',
+                    geographyConfig: {
+                        popupOnHover: true,
+                        popupTemplate: function(geography, data) {
+                            console.log(geography.properties.name);
+                            return '<span class="tooltiptext">' + 'Región: ' + geography.properties.name +'<br/>' + '% de vulnerables: ' + Math.round(data.SUMA_PRIORIDADES*100/data.suma_alumnos) +  '</span>' ; 
+                            //return '<div class="hoverinfo">' + geography.properties.name + '<br/>' + 'Estudiantes prioritarios: ' + data.id + '%' + '<br/>' +'Dependencia: ' + 'Particular Subvencionado'
+                        },
+                        highlightOnHover: true,
+                        borderColor: '#444',
+                        borderWidth: 0.5,
+                        highlightBorderWidth: 3,
+                        dataUrl: 'http://localhost:8080/chile.topo.json'
+                        //dataJson: topoJsonData
+                    },
+
+                    fills: {
+                        '<18%': '#FFCCFF', //rojo
+                        'Entre 18% y 25%'  : '#FF99FF',
+                        'Entre 25% y 32%':'#FF66FF', //naranjo
+                        'Entre 32% y 39%' : '#FF00FF',
+                        'Entre 39% y 46%': '#FF0099', 
+                        'Entre 46% y 53%' : '#CC0099',
+                        'Entre 53% y 60%' : '#990066',
+                        'Entre 60% y 67%' : '#660066',
+                        'Entre 67% y 74%': '#666699', //amarillo
+
+                    },
+
+                    data: sampleDataVul,
+                    setProjection: function (element) {
+                        var projection = d3.geo.mercator() //define que tipo de mapa usaremos
+                            .center([-71.5429688,-35.675148]) // always in [East Latitude, North Longitude]
+                            .scale(700);
+                        var path = d3.geo.path().projection(projection); 
+                        return { path: path, projection: projection };
+                    }
+
+                }); 
+
+                chile_map.legend();
+                var newLabels = {'AN' : 'Antofa'} 
+                chile_map.labels({'customLabelText': newLabels});
+
+
+            //trabajo en los datos para agruparlos por region y depe y saco cant de prioridades
+               /* var nested_region_depe = d3.nest()
+                .key(function(d){return +d.COD_REGION;})
+                .key(function(d){return +d.DEPENDENCIA;})
+                .rollup(function(leaves) { return {
+                    "SUMA_PRIORIDADES" : d3.sum(leaves,function(v){return v.SUMA_PRIORIDADES}),
+                    "NO_VULNERABLES" : d3.sum(leaves,function(v){return v.NO_VULNERABLES}),
+                    "suma_alumnos" : d3.sum(leaves,function(v){ return v.TOTAL_MATRICULA_2015}) 
+                }})                     
+                .entries(data_total);*/
+                   
+
+                //var str = JSON.stringify(nested_region[0], null, 2);
+                //console.log("Nested " + str);
+                
+
+                
+               /*function addPorDepe(data){
+                    var i = 0;
+                    for(var region in data){
+                        data[region].PRIMERA_PRIORIDAD=nested_region[i].values.PRIMERA_PRIORIDAD;
+                        data[region].SEGUNDA_PRIORIDAD=nested_region[i].values.SEGUNDA_PRIORIDAD;                        
+                        data[region].TERCERA_PRIORIDAD=nested_region[i].values.TERCERA_PRIORIDAD;
+                        data[region].SUMA_PRIORIDADES = nested_region[i].values.SUMA_PRIORIDADES;
+                        data[region].suma_alumnos = nested_region[i].values.suma_alumnos;
+                        i++;
+                    }   
+                }
+
+                addPorDepe(sampleData);*/
+
+        
+
+            })
+    </script>
+</body>
+
+</html>
+
